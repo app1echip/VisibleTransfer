@@ -1,3 +1,10 @@
+/* 
+编译 $ g++ play.cpp -o play `pkg-config --cflags --libs opencv`
+运行 $ ./play ./samplefile ./ 200 100
+       argv[1]: 待编码文件
+       argv[2]: 导出图片目录（要带 ‘/’ ）
+       argv[3],argv[4]: 分辨率，如1920x1080
+*/
 #include <fstream>
 #include <vector>
 #include <opencv2/opencv.hpp>
