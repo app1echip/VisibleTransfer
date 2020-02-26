@@ -86,7 +86,9 @@ public:
 			// 文件名格式：img000.png
 			char buf[20];
 			sprintf(buf, "img%03ld.png", i);
-			imwrite(dir + string(buf), frame[i]);
+			Mat dst;
+			copyMakeBorder(frame[i], dst, 1, 1, 1, 1, BORDER_CONSTANT, Scalar(255, 255, 255));
+			imwrite(dir + string(buf), dst);
 		}
 	}
 };
