@@ -16,17 +16,22 @@ class ImageCode {
     uint32_t size;
     const unsigned row;
     const unsigned col;
+    const unsigned channel = 3;
+    const unsigned fps = 10;
 
     uint32_t fileSize;
 
     const short dspRow = 1080;
     const short dspCol = 1920;
+    const short camFps = 30;
 
     uchar &at(uint32_t);
 
     void setByte(uchar, uint32_t);
 
     uchar getByte(uint32_t);
+
+    bool extract(Mat &, Mat &);
 
 public:
     ImageCode(unsigned, unsigned);
@@ -38,11 +43,6 @@ public:
     void saveDataToStream(ostream &);
 
     void loadFromVideo(const string &);
-
-    bool extract(Mat &, Mat &);
-
-    void readSizeInfo();
 };
-
 
 #endif //VISIBLETRANSFER_IMAGECODE_H

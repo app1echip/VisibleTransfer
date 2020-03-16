@@ -7,12 +7,12 @@
 ImageCode::ImageCode(unsigned _row, unsigned _col) : row(_row), col(_col), size(UCHAR_WIDTH * sizeof(fileSize)) {}
 
 uchar &ImageCode::at(uint32_t Id) {
-    int singleFrameCapacity = row * col * 3;
+    int singleFrameCapacity = row * col * channel;
     int frameId = Id / singleFrameCapacity;
-    int pixelSizeOfLastFrame = (Id - frameId * singleFrameCapacity) / 3;
+    int pixelSizeOfLastFrame = (Id - frameId * singleFrameCapacity) / channel;
     int rowId = pixelSizeOfLastFrame / col;
     int colId = pixelSizeOfLastFrame % col;
-    int channelId = Id % 3;
+    int channelId = Id % channel;
     if (frameId > int(frames.size() - 1))
         frames.push_back(Mat(row, col, CV_8UC3));
     return frames[frameId].at<Vec3b>(rowId, colId)[channelId];
@@ -40,7 +40,7 @@ void ImageCode::loadDataFromStream(istream &in) {
         char byte;
         in.read(&byte, sizeof(byte));
         setByte(byte, size);
-        size += 8;
+        size += UCHAR_WIDTH;
     }
     fileSize = size - sizeof(fileSize) * UCHAR_WIDTH;
     for (int i = 0; i < sizeof(fileSize) * UCHAR_WIDTH; i += UCHAR_WIDTH) {
@@ -50,7 +50,7 @@ void ImageCode::loadDataFromStream(istream &in) {
 }
 
 void ImageCode::saveToVideo(const string &dst) {
-    VideoWriter out(dst, CV_FOURCC('m', 'p', '4', 'v'), 30, Size(dspCol, dspRow));
+    VideoWriter out(dst, CV_FOURCC('m', 'p', '4', 'v'), fps, Size(dspCol, dspRow));
     Mat black(dspRow, dspCol, CV_8UC3);
     out << black;
     for (auto &frame:frames) {
@@ -62,30 +62,6 @@ void ImageCode::saveToVideo(const string &dst) {
         out << display;
     }
     out << black;
-}
-
-void ImageCode::saveDataToStream(ostream &out) {
-    for (int i = 0; i < sizeof(fileSize) * UCHAR_WIDTH; i += UCHAR_WIDTH) {
-        uchar byte = getByte(i);
-        uchar *p = (uchar *) &fileSize + i / UCHAR_WIDTH;
-        *p = byte;
-    }
-    for (int i = 0; i < fileSize; i += UCHAR_WIDTH) {
-        char byte = (char) getByte(sizeof(fileSize) * UCHAR_WIDTH + i);
-        out.write(&byte, sizeof(byte));
-    }
-}
-
-
-void ImageCode::loadFromVideo(const string &path) {
-    VideoCapture videoCapture(path);
-    while (1) {
-        Mat raw;
-        Mat extracted(row, col, CV_8UC3);
-        videoCapture >> raw;
-        if (raw.empty()) break;
-        bool has = extract(raw, extracted);
-    }
 }
 
 bool ImageCode::extract(Mat &src, Mat &dst) {
@@ -112,13 +88,15 @@ bool ImageCode::extract(Mat &src, Mat &dst) {
         if (sub > rightUpMax) rightUpMax = sub, rightUp = point;
         if (sub < leftButtonMin) leftButtonMin = sub, leftButton = point;
     }
-    double scaleCol = double(dspCol) / double(col + 4);
+
     double scaleRow = double(dspRow) / double(row + 4);
+    double scaleCol = double(dspCol) / double(col + 4);
     vector<Point2f> srcPoint = {
             Point2f(leftUp),
             Point2f(rightUp),
             Point2f(leftButton),
             Point2f(rightButton)
+
     };
     vector<Point2f> dstPoint = {
             Point2f(0, 0),
@@ -131,26 +109,64 @@ bool ImageCode::extract(Mat &src, Mat &dst) {
     warpPerspective(src, warp, transform, warp.size(), INTER_NEAREST);
     Rect rect(scaleCol - 1, scaleRow - 1, dspCol - 4 * scaleCol, dspRow - 4 * scaleRow);
     Mat crop = warp(rect);
-    Mat mat(row, col, CV_8UC3);
+    dst = Mat::zeros(row, col, CV_8UC3);
     for (int i = 0; i < row; ++i) {
         for (int j = 0; j < col; ++j) {
-            double map_x = i * scaleCol + scaleCol / 2;
-            double map_y = j * scaleRow + scaleRow / 2;
-            auto &target = mat.at<Vec3b>(i, j);
-            auto &source = crop.at<Vec3b>(int(map_x), int(map_y));
-            target = source;
+            double map_x = j * scaleCol + scaleCol / 2;
+            double map_y = i * scaleRow + scaleRow / 2;
+            auto &target = dst.at<Vec3b>(i, j);
+            auto source = crop.at<Vec3b>(int(map_y), int(map_x));
+            for (int i = 0; i < channel; ++i) {
+                target.val[i] = source.val[i] >= uchar(UCHAR_MAX / 2) ? UCHAR_MAX : 0;
+            }
             //printf("(%d,%d)[%d,%d,%d]<-(%lf,%lf)[%d,%d,%d]\n", i, j, target.val[0], target.val[1], target.val[2], map_x,
-            //       map_y, source.val[0], source.val[1], source.val[2]);
-            circle(crop, Point(map_y, map_x), 1, Scalar(0, 0, 255));
+.            //       map_y, source.val[0], source.val[1], source.val[2]);
+            //circle(crop, Point(map_x, map_y), 1, Scalar(0, 0, 255));
         }
     }
-    namedWindow("crop", WINDOW_NORMAL);
-    resizeWindow("crop", 960, 540);
-    imshow("crop", crop);
-    waitKey();
-    namedWindow("mat", WINDOW_NORMAL);
-    resizeWindow("mat", 960, 540);
-    imshow("mat", mat);
-    waitKey();
+    //namedWindow("crop", WINDOW_NORMAL);
+    //resizeWindow("crop", 960, 540);
+    //imshow("crop", crop);
+    //waitKey();
+    //namedWindow("mat", WINDOW_NORMAL);
+    //resizeWindow("mat", 960, 540);
+    //imshow("mat", mat);
+    //waitKey();
     return true;
+}
+
+void ImageCode::loadFromVideo(const string &path) {
+    VideoCapture videoCapture(path);
+    int frameCounter = 0;
+    int validInFrames = camFps / fps;
+    int midId = validInFrames / 2;
+    while (1) {
+        Mat raw;
+        Mat extracted(row, col, CV_8UC3);
+        videoCapture >> raw;
+        if (raw.empty()) break;
+
+        if (extract(raw, extracted)) {
+            string title = format("%03d", frameCounter);
+            namedWindow(title, WINDOW_NORMAL);
+            resizeWindow(title, 960, 540);
+            imshow(title, extracted);
+            waitKey();
+            if (frameCounter % validInFrames == midId)
+                frames.push_back(extracted);
+            frameCounter++;
+        }
+    }
+}
+
+void ImageCode::saveDataToStream(ostream &out) {
+    for (int i = 0; i < sizeof(fileSize) * UCHAR_WIDTH; i += UCHAR_WIDTH) {
+        uchar byte = getByte(i);
+        uchar *p = (uchar *) &fileSize + i / UCHAR_WIDTH;
+        *p = byte;
+    }
+    for (int i = 0; i < fileSize; i += UCHAR_WIDTH) {
+        char byte = (char) getByte(sizeof(fileSize) * UCHAR_WIDTH + i);
+        out.write(&byte, sizeof(byte));
+    }
 }

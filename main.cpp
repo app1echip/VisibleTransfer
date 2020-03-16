@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
         imageCode.loadDataFromStream(fin);
         imageCode.saveToVideo(dst);
     } else if (mode == "decode") {
-        imageCode.loadFromVideo(argv[2]);
+        imageCode.loadFromVideo(src);
         ofstream out(dst, ios::binary);
         imageCode.saveDataToStream(out);
     }
