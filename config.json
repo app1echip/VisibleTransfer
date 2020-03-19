@@ -1,0 +1,13 @@
+{
+	"row": 50,
+	"col": 50,
+	"fps": 10,
+	"displayWidth": 1920,
+	"displayHeight": 1080,
+	"cameraFps": 30,
+	"channel": 3,
+	"headerRow": 50,
+	"headerCol": 50,
+	"rowComponent": 2,
+	"colComponent": 1
+}
