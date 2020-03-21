@@ -1,2 +1,2 @@
-# visibletranfer
-可见光文件传输
+# VisibleTransfer
+Transfer data over visible light.
