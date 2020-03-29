@@ -1,6 +1,12 @@
 #pragma once
 #include <opencv2/opencv.hpp>
 
+#ifdef WIN32 /* define missing macros on Windows */
+#define CHAR_WIDTH 8
+#define CHAR_MAX 127
+#define UCHAR_MAX 255
+#endif
+
 typedef unsigned char byte;
 #define FPS 10.0      /* image code fps */
 #define HEADER_ROW 7  /* header cols */
