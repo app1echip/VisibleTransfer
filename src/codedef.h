@@ -1,5 +1,6 @@
 #pragma once
 #include <opencv2/opencv.hpp>
+
 typedef unsigned char byte;
 #define FPS 10.0      /* image code fps */
 #define HEADER_ROW 7  /* header cols */
