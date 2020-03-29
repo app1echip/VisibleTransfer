@@ -4,6 +4,7 @@
 #include "mat.hpp"
 using namespace std;
 using namespace cv;
+
 int main(int argc, char **argv) {
   /* get file_size in bytes */
   ifstream fin(argv[1], ios::binary | ios::in | ios::ate);
@@ -15,6 +16,7 @@ int main(int argc, char **argv) {
   fin.seekg(0, ios::beg);
   fin.read((char *)data, file_size);
   memset(data + file_size, 0, ext_size - file_size);
+
   /* write crc 16 to crc[] */
   block_num = ext_size / BLOCK_SIZE;
   crc_size = block_num * CRC_SIZE;
@@ -23,6 +25,7 @@ int main(int argc, char **argv) {
     uint16_t block_crc = crc_16(data + i * BLOCK_SIZE, BLOCK_SIZE);
     memcpy(crc + i * CRC_SIZE, &block_crc, CRC_SIZE);
   }
+
   /* get rows and cols of data frames */
   time_limit = stoi(argv[3]);
   frames = time_limit / (1000.0 / FPS) - 2;
@@ -36,6 +39,7 @@ int main(int argc, char **argv) {
   cols = precise_cols;
   if (rows < precise_rows) rows++;
   if (cols < precise_cols) cols++;
+
   /* write file_size, rows and cols to header */
   header = Mat::zeros(HEADER_ROW, HEADER_COL, COLOR);
   size_t p = 0;
@@ -45,6 +49,7 @@ int main(int argc, char **argv) {
     write_byte(&header, p++ * CHAR_WIDTH, *((char *)&rows + i));
   for (size_t i = 0; i < sizeof(cols); ++i)
     write_byte(&header, p++ * CHAR_WIDTH, *((char *)&cols + i));
+
   /* create $frames of Mat and set each rows and cols */
   mats = new Mat[frames];
   for (int i = 0; i < frames; ++i) mats[i] = Mat::zeros(rows, cols, COLOR);
@@ -63,6 +68,7 @@ int main(int argc, char **argv) {
       write_byte(mats, byte_beg * CHAR_WIDTH, crc[i * CRC_SIZE + j]);
     }
   }
+
   /* save header and mats[] to video */
   int vid_format = CV_FOURCC('m', 'p', '4', 'v');
   Size vid_size = Size(DSP_WD, DSP_HT);
@@ -83,8 +89,10 @@ int main(int argc, char **argv) {
     resize(mats[i], mats[i], vid_size, 0, 0, INTER_NEAREST);
     out << mats[i];
   }
+
   delete[] mats;
   delete[] crc;
   delete[] data;
+  
   return 0;
 }
