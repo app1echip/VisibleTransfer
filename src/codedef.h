@@ -4,11 +4,11 @@
 #include <opencv2/opencv.hpp>
 
 typedef unsigned char byte;
-#define MAX_BPS 10240 /* max speed in B/s */
+#define MAX_BPS 13000 /* max speed in B/s */
 #define FPS 10.0      /* image code fps */
 #define HEADER_ROW 7  /* header cols */
 #define HEADER_COL 7  /* header rows */
-#define ASPECT 2.0    /* image code aspect ratio (rows/cols) */
+#define ASPECT 1.778  /* image code aspect ratio (rows/cols) */
 #define CHANNEL 3     /* pixel color format */
 #define COLOR CV_8UC3 /* pixel color format */
 #define DSP_WD 1920   /* output and input video width in pixels */

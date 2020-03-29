@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
   /* read header */
   header = Mat::zeros(HEADER_ROW, HEADER_COL, COLOR);
   find_pattern(in, header);
-  
+
   /* read file_size, rows and cols from header */
   size_t p = 0;
   for (size_t i = 0; i < sizeof(file_size); ++i)
@@ -91,7 +91,7 @@ void find_pattern(VideoCapture& in, Mat& out) {
     if (raw.empty()) return;
     /* find all contours */
     cvtColor(raw, bin, COLOR_BGR2GRAY);
-    threshold(bin, bin, 0, UCHAR_MAX, THRESH_BINARY | THRESH_OTSU);
+    threshold(bin, bin, 0, UCHAR_MAX, THRESH_BINARY | THRESH_OTSU); 
     vector<vector<Point>> con;
     vector<Vec4i> hie;
     findContours(bin, con, hie, RETR_LIST, CHAIN_APPROX_SIMPLE, Point());
@@ -107,7 +107,7 @@ void find_pattern(VideoCapture& in, Mat& out) {
 
     /* return false if max contour area too small or frame redundent */
     /* correct code if valid */
-    if (max_area > 850000 && valid++ == dup / 2) {
+    if (max_area > 850000.0 && valid++ == dup / 2) {
       /* find corners */
       Point pts[4];
       int32_t m[4] = {INT32_MAX, INT32_MIN, INT32_MAX, INT32_MIN};
@@ -134,7 +134,8 @@ void find_pattern(VideoCapture& in, Mat& out) {
       origin.emplace_back(Point2f(warp_wd, warp_ht));
       Mat transform = getPerspectiveTransform(corner, origin);
       Mat warp(int(warp_ht), int(warp_wd), COLOR);
-      
+      warpPerspective(raw, warp, transform, warp.size());
+
       /* pick color */
       for (int i = 0; i < out.rows; ++i) {
         for (int j = 0; j < out.cols; ++j) {
