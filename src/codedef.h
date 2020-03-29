@@ -1,9 +1,10 @@
 #pragma once
-#include <opencv2/opencv.hpp>
 #include <climits>
 #include <cstdint>
+#include <opencv2/opencv.hpp>
 
 typedef unsigned char byte;
+#define MAX_BPS 10240 /* max speed in B/s */
 #define FPS 10.0      /* image code fps */
 #define HEADER_ROW 7  /* header cols */
 #define HEADER_COL 7  /* header rows */

@@ -17,6 +17,16 @@ int main(int argc, char **argv) {
   fin.read((char *)data, file_size);
   memset(data + file_size, 0, ext_size - file_size);
 
+  /* transfer only part of file if too targe */
+  time_limit = stoi(argv[3]);
+  double precise_max_size = double(time_limit) / 1000.0;
+  precise_max_size *= double(MAX_BPS);
+  if (double(file_size) > precise_max_size) {
+    size_t max_size = size_t(precise_max_size);
+    while (max_size % BLOCK_SIZE != 0) max_size--;
+    file_size = ext_size = max_size;
+  }
+
   /* write crc 16 to crc[] */
   block_num = ext_size / BLOCK_SIZE;
   crc_size = block_num * CRC_SIZE;
@@ -27,7 +37,6 @@ int main(int argc, char **argv) {
   }
 
   /* get rows and cols of data frames */
-  time_limit = stoi(argv[3]);
   frames = time_limit / (1000.0 / FPS) - 2;
   size_t total_bits_size = (ext_size + crc_size) * CHAR_WIDTH;
   double precise_rows = total_bits_size;
@@ -93,6 +102,6 @@ int main(int argc, char **argv) {
   delete[] mats;
   delete[] crc;
   delete[] data;
-  
+
   return 0;
 }
