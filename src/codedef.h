@@ -1,6 +1,7 @@
 #pragma once
-#include <climits>
-#include <cstdint>
+#ifdef WIN32
+#define CHAR_WIDTH 8
+#endif
 #include <opencv2/opencv.hpp>
 
 typedef unsigned char byte;
@@ -23,7 +24,7 @@ int frames;           /* image code frames */
 size_t ext_size;      /* extended file size in bytes */
 size_t crc_size;      /* entire crc size in bytes */
 size_t block_num;     /* number of blocks */
-byte *data;           /* binary file */
+byte *raw;           /* binary file */
 byte *crc;            /* entire file crc */
 byte *verify;         /* indicates reliability */
 cv::Mat header;       /* header that indicates file_size, rows and cols */

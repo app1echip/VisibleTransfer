@@ -40,15 +40,15 @@ int main(int argc, char** argv) {
     find_pattern(in, mats[i]);
   }
   /* split mats[] into data[] and crc[] */
-  data = new byte[ext_size];
+  raw = new byte[ext_size];
   crc = new byte[crc_size];
-  memset(data + file_size, 0, ext_size - file_size);
+  memset(raw + file_size, 0, ext_size - file_size);
   for (size_t i = 0; i < block_num; ++i) {
     /* read one data block */
     size_t block_beg = i * (BLOCK_SIZE + CRC_SIZE);
     for (int j = 0; j < BLOCK_SIZE; j++) {
       size_t byte_beg = block_beg + j;
-      read_byte(mats, byte_beg * CHAR_WIDTH, data + i * BLOCK_SIZE + j);
+      read_byte(mats, byte_beg * CHAR_WIDTH, raw + i * BLOCK_SIZE + j);
     }
     /* read one crc block */
     size_t crc_beg = block_beg + BLOCK_SIZE;
@@ -60,12 +60,12 @@ int main(int argc, char** argv) {
 
   /* save binary file */
   ofstream out(argv[2], ios::binary);
-  out.write((char*)data, file_size);
+  out.write((char*)raw, file_size);
 
   /* check crc and save result */
   verify = new byte[ext_size];
   for (size_t i = 0; i < block_num; ++i) {
-    bool same = crc_16(data + i * BLOCK_SIZE, BLOCK_SIZE) ==
+    bool same = crc_16(raw + i * BLOCK_SIZE, BLOCK_SIZE) ==
                 *(uint16_t*)(crc + i * CRC_SIZE);
     memset(verify + i * BLOCK_SIZE, same * 0xff, BLOCK_SIZE);
   }
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
   vout.write((char*)verify, file_size);
 
   delete[] verify;
-  delete[] data;
+  delete[] raw;
   delete[] crc;
   delete[] mats;
 

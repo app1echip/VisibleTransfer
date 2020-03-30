@@ -12,10 +12,10 @@ int main(int argc, char **argv) {
   /* load file into data[] */
   ext_size = file_size;
   while (ext_size % BLOCK_SIZE != 0) ext_size++;
-  data = new byte[ext_size];
+  raw = new byte[ext_size];
   fin.seekg(0, ios::beg);
-  fin.read((char *)data, file_size);
-  memset(data + file_size, 0, ext_size - file_size);
+  fin.read((char *)raw, file_size);
+  memset(raw + file_size, 0, ext_size - file_size);
 
   /* transfer only part of file if too targe */
   time_limit = stoi(argv[3]);
@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
   crc_size = block_num * CRC_SIZE;
   crc = new byte[crc_size];
   for (size_t i = 0; i < block_num; ++i) {
-    uint16_t block_crc = crc_16(data + i * BLOCK_SIZE, BLOCK_SIZE);
+    uint16_t block_crc = crc_16(raw + i * BLOCK_SIZE, BLOCK_SIZE);
     memcpy(crc + i * CRC_SIZE, &block_crc, CRC_SIZE);
   }
 
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     size_t block_beg = i * (BLOCK_SIZE + CRC_SIZE);
     for (int j = 0; j < BLOCK_SIZE; j++) {
       size_t byte_beg = block_beg + j;
-      write_byte(mats, byte_beg * CHAR_WIDTH, data[i * BLOCK_SIZE + j]);
+      write_byte(mats, byte_beg * CHAR_WIDTH, raw[i * BLOCK_SIZE + j]);
     }
     /* write one crc block */
     size_t crc_beg = block_beg + BLOCK_SIZE;
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
 
   delete[] mats;
   delete[] crc;
-  delete[] data;
+  delete[] raw;
 
   return 0;
 }
