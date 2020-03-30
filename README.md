@@ -15,4 +15,3 @@ This project was initially developed and tested with `libopencv-dev` version 3.2
 ```bash
 ./check vout.bin
 ```
-`install.sh` installs `libopencv-dev` on Ubuntu, which provides necessary runtime libraries.
