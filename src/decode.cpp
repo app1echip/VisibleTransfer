@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
   /* read header */
   header = Mat::zeros(HEADER_ROW, HEADER_COL, COLOR);
   find_pattern(in, header);
-  
+
   /* read file_size, rows and cols from header */
   size_t p = 0;
   for (size_t i = 0; i < sizeof(file_size); ++i)
@@ -40,15 +40,15 @@ int main(int argc, char** argv) {
     find_pattern(in, mats[i]);
   }
   /* split mats[] into data[] and crc[] */
-  data = new byte[ext_size];
+  raw = new byte[ext_size];
   crc = new byte[crc_size];
-  memset(data + file_size, 0, ext_size - file_size);
+  memset(raw + file_size, 0, ext_size - file_size);
   for (size_t i = 0; i < block_num; ++i) {
     /* read one data block */
     size_t block_beg = i * (BLOCK_SIZE + CRC_SIZE);
     for (int j = 0; j < BLOCK_SIZE; j++) {
       size_t byte_beg = block_beg + j;
-      read_byte(mats, byte_beg * CHAR_WIDTH, data + i * BLOCK_SIZE + j);
+      read_byte(mats, byte_beg * CHAR_WIDTH, raw + i * BLOCK_SIZE + j);
     }
     /* read one crc block */
     size_t crc_beg = block_beg + BLOCK_SIZE;
@@ -60,12 +60,12 @@ int main(int argc, char** argv) {
 
   /* save binary file */
   ofstream out(argv[2], ios::binary);
-  out.write((char*)data, file_size);
+  out.write((char*)raw, file_size);
 
   /* check crc and save result */
   verify = new byte[ext_size];
   for (size_t i = 0; i < block_num; ++i) {
-    bool same = crc_16(data + i * BLOCK_SIZE, BLOCK_SIZE) ==
+    bool same = crc_16(raw + i * BLOCK_SIZE, BLOCK_SIZE) ==
                 *(uint16_t*)(crc + i * CRC_SIZE);
     memset(verify + i * BLOCK_SIZE, same * 0xff, BLOCK_SIZE);
   }
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
   vout.write((char*)verify, file_size);
 
   delete[] verify;
-  delete[] data;
+  delete[] raw;
   delete[] crc;
   delete[] mats;
 
@@ -91,7 +91,7 @@ void find_pattern(VideoCapture& in, Mat& out) {
     if (raw.empty()) return;
     /* find all contours */
     cvtColor(raw, bin, COLOR_BGR2GRAY);
-    threshold(bin, bin, 0, UCHAR_MAX, THRESH_BINARY | THRESH_OTSU);
+    threshold(bin, bin, 0, UCHAR_MAX, THRESH_BINARY | THRESH_OTSU); 
     vector<vector<Point>> con;
     vector<Vec4i> hie;
     findContours(bin, con, hie, RETR_LIST, CHAIN_APPROX_SIMPLE, Point());
@@ -107,7 +107,7 @@ void find_pattern(VideoCapture& in, Mat& out) {
 
     /* return false if max contour area too small or frame redundent */
     /* correct code if valid */
-    if (max_area > 850000 && valid++ == dup / 2) {
+    if (max_area > 850000.0 && valid++ == dup / 2) {
       /* find corners */
       Point pts[4];
       int32_t m[4] = {INT32_MAX, INT32_MIN, INT32_MAX, INT32_MIN};
@@ -134,7 +134,8 @@ void find_pattern(VideoCapture& in, Mat& out) {
       origin.emplace_back(Point2f(warp_wd, warp_ht));
       Mat transform = getPerspectiveTransform(corner, origin);
       Mat warp(int(warp_ht), int(warp_wd), COLOR);
-      
+      warpPerspective(raw, warp, transform, warp.size());
+
       /* pick color */
       for (int i = 0; i < out.rows; ++i) {
         for (int j = 0; j < out.cols; ++j) {
