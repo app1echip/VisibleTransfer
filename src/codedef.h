@@ -24,7 +24,7 @@ int frames;           /* image code frames */
 size_t ext_size;      /* extended file size in bytes */
 size_t crc_size;      /* entire crc size in bytes */
 size_t block_num;     /* number of blocks */
-byte *raw;           /* binary file */
+byte *raw;            /* binary file */
 byte *crc;            /* entire file crc */
 byte *verify;         /* indicates reliability */
 cv::Mat header;       /* header that indicates file_size, rows and cols */
